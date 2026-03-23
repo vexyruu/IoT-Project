@@ -1,0 +1,17 @@
+{
+  "name": "perak-aircraft-backend",
+  "version": "1.0.0",
+  "module": "src/index.ts",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "latest",
+    "elysia": "latest"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.10",
+    "@types/bun": "latest"
+  }
+}
