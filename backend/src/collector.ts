@@ -13,7 +13,11 @@ const OPENSKY_URL =
   `?lamin=${PERAK_BBOX.lamin}&lomin=${PERAK_BBOX.lomin}` +
   `&lamax=${PERAK_BBOX.lamax}&lomax=${PERAK_BBOX.lomax}`;
 
-const POLL_INTERVAL_MS = 60_000; // 60 seconds — respects OpenSky rate limits
+const POLL_INTERVAL_MS = 90_000; // 90 seconds — safer for registered OpenSky accounts on cloud IPs
+
+// Optional Basic Auth for registered OpenSky accounts (higher rate limits)
+const OPENSKY_USER = process.env.OPENSKY_USER?.trim();
+const OPENSKY_PASS = process.env.OPENSKY_PASS?.trim();
 
 // OpenSky state vector field indices (anonymous API)
 // [icao24, callsign, origin_country, time_position, last_contact,
@@ -34,9 +38,16 @@ const IDX = {
 async function poll(): Promise<void> {
   const ts = Math.floor(Date.now() / 1000);
   try {
+    const headers: Record<string, string> = {
+      "User-Agent": "TFB2093-Perak-Monitor/1.0",
+    };
+    if (OPENSKY_USER && OPENSKY_PASS) {
+      headers["Authorization"] = "Basic " + btoa(`${OPENSKY_USER}:${OPENSKY_PASS}`);
+    }
+
     const res = await fetch(OPENSKY_URL, {
       signal: AbortSignal.timeout(15_000),
-      headers: { "User-Agent": "TFB2093-Perak-Monitor/1.0" },
+      headers,
     });
 
     if (!res.ok) {
@@ -84,8 +95,8 @@ async function poll(): Promise<void> {
 }
 
 export function startCollector(): void {
-  console.log(`[collector] Starting — polling every ${POLL_INTERVAL_MS / 1000}s`);
-  // Run immediately on start, then on interval
+  const authMode = OPENSKY_USER ? `authenticated as ${OPENSKY_USER}` : "anonymous";
+  console.log(`[collector] Starting — polling every ${POLL_INTERVAL_MS / 1000}s (${authMode})`);
   poll();
   setInterval(poll, POLL_INTERVAL_MS);
 }
